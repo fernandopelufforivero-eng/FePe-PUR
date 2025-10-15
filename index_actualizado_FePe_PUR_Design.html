@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AISLAMIENTO CRIOGÉNICO – SISTEMA PUR | FePe – Cryogenic PUR System (Diseño Corregido)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net/npm" crossorigin>
+<style>
+  :root { --ink:#000; --bg:#fff; }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Arial,"Helvetica Neue",Helvetica,sans-serif;}
+  header{padding:16px 20px;border-bottom:2px solid var(--ink);}
+  header h1{margin:0 0 4px 0;font-size:20px;letter-spacing:.5px}
+  header p{margin:0;font-size:12px;opacity:.9}
+  main{display:grid;grid-template-columns:392px 1fr;gap:20px;padding:16px 20px 32px}
+  .card{border:1px solid var(--ink);padding:14px;border-radius:4px;background:var(--bg)}
+  .card h2{margin:0 0 10px 0;font-size:15px;text-transform:uppercase;letter-spacing:.6px}
+  label{display:block;font-size:12px;margin:8px 0 2px}
+  input,select{width:100%;box-sizing:border-box;font-size:13px;padding:7px 8px;border:1px solid var(--ink);border-radius:4px;background:var(--bg)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 12px}
+  .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+  button{padding:10px 12px;border:2px solid var(--ink);background:var(--bg);cursor:pointer;font-weight:700}
+  button:active{transform:translateY(1px)}
+  canvas{background:var(--bg);border:1px solid var(--ink)}
+  .results{font-size:13px;line-height:1.6}
+  .muted{opacity:.85}
+  footer{padding:12px 20px 24px;border-top:2px solid var(--ink);font-size:11px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .caption{font-size:12px;margin-top:6px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid #000;padding:6px 8px;text-align:left}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 12px;}
+  @media (max-width: 980px){ main{grid-template-columns:1fr} }
+  @media print{
+    @page{size:Letter portrait;margin:12mm}
+    header,.no-print,footer{display:none!important}
+    main{grid-template-columns:1fr;gap:0;padding:0}
+    .card{border:none;padding:0}
+    canvas{border:1px solid var(--ink)}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>=== AISLAMIENTO CRIOGÉNICO – SISTEMA PUR | FePe – Cryogenic PUR System ===</h1>
+  <p>Diseño corregido de espesor PUR (búsqueda binaria), capas y barrera de vapor considerando chaqueta de aluminio. Carta 8.5×11 in. Firma: F. Peluffo – Octubre 2025.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Datos de proceso y geometría</h2>
+    <div class="grid2">
+      <div><label>Nombre del caso</label><input id="nombre" value="Caso_Diseño"/></div>
+      <div><label>Longitud L (m)</label><input id="L" type="number" step="0.01" value="1.0"/></div>
+      <div><label>Diámetro interno (in)</label><input id="d_in" type="number" step="0.001" value="24"/></div>
+      <div><label>Espesor pared metálica (in)</label><input id="t_pared" type="number" step="0.001" value="0.375"/></div>
+    </div>
+
+    <h2>Temperaturas y películas</h2>
+    <div class="grid2">
+      <div><label>T fluido (°C)</label><input id="T_in" type="number" step="0.1" value="-160"/></div>
+      <div><label>T ambiente (°C)</label><input id="T_out" type="number" step="0.1" value="25"/></div>
+      <div><label>h interna (W/m²·K)</label><input id="h_in" type="number" step="1" value="500"/></div>
+      <div><label>h externa (W/m²·K)</label><input id="h_out" type="number" step="1" value="10"/></div>
+    </div>
+
+    <h2>Materiales</h2>
+    <div class="grid3">
+      <div><label>k acero (W/m·K)</label><input id="k_acero" type="number" step="0.1" value="16"/></div>
+      <div><label>a PUR [W/m·K] a 25°C</label><input id="k_a" type="number" step="0.0001" value="0.022"/></div>
+      <div><label>b PUR [W/m·K/°C]</label><input id="k_b" type="number" step="0.000001" value="0.00015"/></div>
+      <div><label>k chaqueta (Al) (W/m·K)</label><input id="k_al" type="number" step="0.1" value="160"/></div>
+      <div><label>Espesor chaqueta (mm)</label><input id="t_al_mm" type="number" step="0.1" value="0.5"/></div>
+      <div><label>Densidad PUR (kg/m³)</label><input id="rho_pur" type="number" step="0.1" value="35"/></div>
+    </div>
+
+    <h2>Criterios de diseño</h2>
+    <div class="grid3">
+      <div>
+        <label>Modo</label>
+        <select id="modo">
+          <option value="rocio">Evitar condensación (T_sup ≥ T_rocio + margen)</option>
+          <option value="qmax">Limitar fuga (q ≤ q_max)</option>
+        </select>
+      </div>
+      <div><label>Humedad relativa φ (0–1)</label><input id="phi" type="number" step="0.01" value="0.60"/></div>
+      <div><label>Margen sobre T_rocio (°C)</label><input id="margen" type="number" step="0.1" value="2"/></div>
+      <div><label>q_max (W/m)</label><input id="qmax" type="number" step="0.1" value="40"/></div>
+      <div><label>t PUR mín (in)</label><input id="tmin" type="number" step="0.1" value="0.5"/></div>
+      <div><label>t PUR máx (in)</label><input id="tmax" type="number" step="0.1" value="12"/></div>
+      <div><label>Tolerancia (°C o W/m)</label><input id="tol" type="number" step="0.01" value="0.02"/></div>
+    </div>
+
+    <h2>Construcción (capas)</h2>
+    <div class="grid3">
+      <div><label>Espesor máx por capa (in)</label><input id="tcapamax" type="number" step="0.1" value="2.0"/></div>
+      <div><label>N° máx de capas</label><input id="ncapamax" type="number" step="1" value="5"/></div>
+      <div><label>Separación vapor-stops (m)</label><input id="vapstop" type="number" step="0.1" value="6.0"/></div>
+    </div>
+
+    <div class="actions">
+      <button id="btnDisenar">Diseñar espesor PUR</button>
+      <button id="btnImprimir" class="no-print">Imprimir (Carta)</button>
+      <button id="btnPNG" class="no-print">Descargar PNG</button>
+    </div>
+    <p class="muted">Criterios: (a) T_sup ≥ T_rocio + margen (b) q ≤ q_max. Se incluye chaqueta de aluminio en la resistencia. Búsqueda binaria de t_PUR.</p>
+  </section>
+
+  <section class="card">
+    <h2>Lámina — Perfil de temperatura radial</h2>
+    <canvas id="chart" width="1000" height="650" aria-label="Gráfica de temperatura radial"></canvas>
+    <div class="caption">Escala radial en pulgadas. Firma: <strong>F. Peluffo – Octubre 2025</strong>.</div>
+
+    <div class="card results" style="margin-top:12px;">
+      <h2>Resultados de diseño</h2>
+      <table>
+        <tbody id="tablaRes"></tbody>
+      </table>
+      <div class="mono" id="textoCapas" style="margin-top:8px;"></div>
+      <div class="mono" id="notaBV" style="margin-top:8px;"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>© 2025 FePe – Cryogenic PUR System | Español técnico | Carta 8.5×11 in</div>
+  <div>Firma automática en láminas: F. Peluffo – Octubre 2025</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const IN_TO_M=0.0254, FT_TO_M=0.3048, W_TO_BTU_H=3.412141633;
+const btuPerHPft = q => q * W_TO_BTU_H / (1/FT_TO_M);
+const Rconv=(h,r,L)=> h>0? 1/(h*2*Math.PI*r*L) : 0;
+const Rcond=(k,r1,r2,L)=> Math.log(r2/r1)/(2*Math.PI*k*L);
+const kPUR=(Tc,a,b)=> a + b*(Tc-25.0);
+function dewPointC(Tc, phi){ const a=17.27,b=237.7; const A=((a*Tc)/(b+Tc))+Math.log(phi); return (b*A)/(a-A); }
+
+function solveForThickness(inp, t_pur_in){
+  const r_in=(inp.d_in*IN_TO_M)/2;
+  const r_pared_ext=r_in + inp.t_pared*IN_TO_M;
+  const r_PUR_ext=r_pared_ext + t_pur_in*IN_TO_M;
+  const t_al_m=inp.t_al_mm/1000.0;
+  const r_AL_ext=r_PUR_ext + t_al_m;
+
+  const Rconv_in=Rconv(inp.h_in, r_in, inp.L);
+  const R_pared=(inp.t_pared>0)? Rcond(inp.k_acero, r_in, r_pared_ext, inp.L) : 0;
+  const R_al=(t_al_m>0)? Rcond(inp.k_al, r_PUR_ext, r_AL_ext, inp.L) : 0;
+  const Rconv_out=Rconv(inp.h_out, r_AL_ext, inp.L);
+
+  let kpur = kPUR((inp.T_in+inp.T_out)/2, inp.k_a, inp.k_b);
+  const Rtotal = kp => Rconv_in + R_pared + Rcond(kp, r_pared_ext, r_PUR_ext, inp.L) + R_al + Rconv_out;
+
+  for(let i=0;i<30;i++){
+    const Rtot=Rtotal(kpur);
+    const q=(inp.T_in - inp.T_out)/Rtot;
+    const RhastaALext = Rconv_in + R_pared + Rcond(kpur, r_pared_ext, r_PUR_ext, inp.L) + R_al;
+    const T_AL_ext = inp.T_in - q*RhastaALext;
+    const knew = kPUR((inp.T_in + T_AL_ext)/2, inp.k_a, inp.k_b);
+    if (Math.abs(knew-kpur) < 1e-5){ kpur=knew; break; }
+    kpur = knew;
+  }
+
+  const Rtot=Rtotal(kpur);
+  const qWm=(inp.T_in-inp.T_out)/Rtot;
+  const RhastaALext = Rconv_in + R_pared + Rcond(kpur, r_pared_ext, r_PUR_ext, inp.L) + R_al;
+  const T_AL_ext = inp.T_in - qWm*RhastaALext;
+  return { qWm, T_AL_ext, r_in, r_pared_ext, r_PUR_ext, r_AL_ext, kpur, Rconv_in };
+}
+
+function designThickness(inp){
+  const mode=document.getElementById('modo').value;
+  const Tdew=dewPointC(inp.T_out, inp.phi);
+  const targetT=Tdew + inp.margen;
+
+  let lo=inp.tmin, hi=inp.tmax, best=null;
+  for(let it=0; it<40; it++){
+    const mid=(lo+hi)/2;
+    const s=solveForThickness(inp, mid);
+    const ok=(mode==='rocio') ? (s.T_AL_ext >= targetT) : (s.qWm <= inp.qmax);
+    if(ok){ best={t_in:mid, ...s}; hi=mid; } else { lo=mid; }
+    if (Math.abs(hi-lo) < Math.max(inp.tol*0.02, 0.005)) break;
+  }
+  const s=solveForThickness(inp, hi);
+  const ok=(mode==='rocio') ? (s.T_AL_ext >= targetT) : (s.qWm <= inp.qmax);
+  if(ok){ best={t_in:hi, ...s}; }
+  return {best, Tdew, targetT};
+}
+
+function runDesign(){
+  const inp={
+    nombre:(document.getElementById('nombre').value.trim()||'Caso'),
+    L:+document.getElementById('L').value,
+    d_in:+document.getElementById('d_in').value,
+    t_pared:+document.getElementById('t_pared').value,
+    T_in:+document.getElementById('T_in').value,
+    T_out:+document.getElementById('T_out').value,
+    h_in:+document.getElementById('h_in').value,
+    h_out:+document.getElementById('h_out').value,
+    k_acero:+document.getElementById('k_acero').value,
+    k_a:+document.getElementById('k_a').value,
+    k_b:+document.getElementById('k_b').value,
+    k_al:+document.getElementById('k_al').value,
+    t_al_mm:+document.getElementById('t_al_mm').value,
+    rho_pur:+document.getElementById('rho_pur').value,
+    phi:+document.getElementById('phi').value,
+    margen:+document.getElementById('margen').value,
+    qmax:+document.getElementById('qmax').value,
+    tmin:+document.getElementById('tmin').value,
+    tmax:+document.getElementById('tmax').value,
+    tol:+document.getElementById('tol').value,
+    tcapamax:+document.getElementById('tcapamax').value,
+    ncapamax:+document.getElementById('ncapamax').value,
+    vapstop:+document.getElementById('vapstop').value
+  };
+
+  const res=designThickness(inp), best=res.best;
+  const tbody=document.getElementById('tablaRes');
+  const textoCapas=document.getElementById('textoCapas');
+  const notaBV=document.getElementById('notaBV');
+  tbody.innerHTML=''; textoCapas.textContent=''; notaBV.textContent='';
+
+  if(!best){
+    tbody.innerHTML = `<tr><td colspan="2">No se encontró un espesor que cumpla el criterio dentro del rango [${inp.tmin}–${inp.tmax}] in. Ajuste parámetros o límites.</td></tr>`;
+    return;
+  }
+
+  let nCapas=Math.ceil(best.t_in / inp.tcapamax);
+  nCapas=Math.min(Math.max(1,nCapas), inp.ncapamax);
+  let capas=[]; let rem=best.t_in;
+  for(let i=1;i<=nCapas;i++){
+    const t = (i<nCapas)? Math.min(inp.tcapamax, rem) : rem;
+    capas.push(`Capa ${i}: ${t.toFixed(2)} in`);
+    rem = Math.max(0, rem - t);
+  }
+
+  const areaPUR = Math.PI*(best.r_PUR_ext*best.r_PUR_ext - best.r_pared_ext*best.r_pared_ext);
+  const pesoPUR_kg_m = inp.rho_pur * areaPUR;
+  const peso_total = pesoPUR_kg_m * inp.L;
+
+  const rows = [
+    ['Modo de diseño', (document.getElementById('modo').value==='rocio'?'Evitar condensación':'Límite de fuga')],
+    ['T_amb (°C) | φ (–) | T_rocío (°C)', `${inp.T_out.toFixed(1)} | ${(+inp.phi).toFixed(2)} | ${res.Tdew.toFixed(2)}`],
+    ['Objetivo', (document.getElementById('modo').value==='rocio' ? `T_sup ≥ ${res.targetT.toFixed(2)} °C` : `q ≤ ${(+inp.qmax).toFixed(2)} W/m`)],
+    ['Espesor PUR diseñado (total)', `${best.t_in.toFixed(2)} in`],
+    ['Número de capas', `${nCapas}`],
+    ['q (W/m) | BTU/h·ft', `${best.qWm.toFixed(2)} | ${btuPerHPft(best.qWm).toFixed(2)}`],
+    ['T_sup sólida (chaqueta Al, antes de convección)', `${best.T_AL_ext.toFixed(2)} °C`],
+    ['Radios (in): r_in | r_ext PUR | r_ext AL', `${(inp.d_in/2).toFixed(3)} | ${(inp.d_in/2 + inp.t_pared + best.t_in).toFixed(3)} | ${(inp.d_in/2 + inp.t_pared + best.t_in + (inp.t_al_mm/25.4)).toFixed(3)}`],
+    ['Peso PUR (kg/m) | total en L (kg)', `${pesoPUR_kg_m.toFixed(3)} | ${peso_total.toFixed(3)}`]
+  ];
+  rows.forEach(r=>{
+    const tr=document.createElement('tr'); const td1=document.createElement('td'); const td2=document.createElement('td');
+    td1.textContent=r[0]; td2.textContent=r[1]; tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+  });
+
+  textoCapas.textContent = 'Construcción: ' + capas.join('  |  ');
+  notaBV.textContent = `Barrera de vapor: colocar en el LADO CÁLIDO (exterior), continua debajo de la chaqueta de aluminio. Disponer vapor-stops cada ${inp.vapstop} m y en toda discontinuidad/soporte.`;
+
+  const Np=100, r_vals=[];
+  for(let i=0;i<=Np;i++){ r_vals.push(best.r_in + (best.r_AL_ext - best.r_in)*i/Np); }
+  const Rconv_in = best.Rconv_in;
+  const Tstart = inp.T_in - best.qWm*Rconv_in;
+  const Tvals = new Array(r_vals.length).fill(0);
+  for(let i=0;i<r_vals.length;i++){
+    const r=r_vals[i];
+    if (r <= best.r_pared_ext){
+      const frac=Math.log(r/best.r_in)/Math.log(best.r_pared_ext/best.r_in);
+      const dT=best.qWm*Rcond(inp.k_acero, best.r_in, best.r_pared_ext, 1.0);
+      Tvals[i]=Tstart - Math.max(0,Math.min(1,frac))*dT;
+    } else if (r <= best.r_PUR_ext){
+      const dTsteel=best.qWm*Rcond(inp.k_acero, best.r_in, best.r_pared_ext, 1.0);
+      const frac=Math.log(r/best.r_pared_ext)/Math.log(best.r_PUR_ext/best.r_pared_ext);
+      const dTpur=best.qWm*Rcond(best.kpur, best.r_pared_ext, best.r_PUR_ext, 1.0);
+      Tvals[i]=Tstart - dTsteel - Math.max(0,Math.min(1,frac))*dTpur;
+    } else {
+      const dTsteel=best.qWm*Rcond(inp.k_acero, best.r_in, best.r_pared_ext, 1.0);
+      const dTpur=best.qWm*Rcond(best.kpur, best.r_pared_ext, best.r_PUR_ext, 1.0);
+      const frac=Math.log(r/best.r_PUR_ext)/Math.log(best.r_AL_ext/best.r_PUR_ext);
+      const dTal=best.qWm*Rcond(inp.k_al, best.r_PUR_ext, best.r_AL_ext, 1.0);
+      Tvals[i]=Tstart - dTsteel - dTpur - Math.max(0,Math.min(1,frac))*dTal;
+    }
+  }
+  const r_in_vals = r_vals.map(v=> v/IN_TO_M);
+  if (window._chart) window._chart.destroy();
+  window._chart = new Chart(document.getElementById('chart').getContext('2d'), {
+    type:'line',
+    data:{ labels:r_in_vals, datasets:[{ label:'Temperatura [°C]', data:Tvals, borderWidth:3, pointRadius:1, tension:0, showLine:true }] },
+    options:{ responsive:false, animation:false, scales:{ x:{ title:{display:true,text:'Radio [in]'}, ticks:{maxTicksLimit:14}}, y:{ title:{display:true,text:'Temperatura [°C]'}} }, plugins:{ legend:{display:false}, title:{display:true, text:`SECCIÓN – DISEÑO PUR | ${inp.nombre} (t = ${best.t_in.toFixed(2)} in)` }}},
+    plugins:[{ id:'firma', afterDraw(c){ const {ctx,chartArea}=c; ctx.save(); ctx.fillStyle='#000'; ctx.font='12px Arial'; ctx.textAlign='right'; ctx.fillText('F. Peluffo – Octubre 2025', chartArea.right, chartArea.bottom+24); ctx.restore(); } }]
+  });
+}
+
+document.getElementById('btnDisenar').addEventListener('click', runDesign);
+document.getElementById('btnImprimir').addEventListener('click', ()=>window.print());
+document.getElementById('btnPNG').addEventListener('click', ()=>{ const c=document.getElementById('chart'); const a=document.createElement('a'); a.download='lamina_diseno_PUR.png'; a.href=c.toDataURL('image/png'); a.click(); });
+window.addEventListener('load', runDesign);
+</script>
+</body>
+</html>
