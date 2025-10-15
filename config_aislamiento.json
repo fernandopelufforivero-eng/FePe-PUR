@@ -1,0 +1,44 @@
+{
+  "casos": [
+    {
+      "nombre": "Columna_24in_PUR2in",
+      "diametro_interno_in": 24.0,
+      "espesor_pared_in": 0.375,
+      "k_acero_W_mK": 16.0,
+      "T_fluido_C": -160.0,
+      "T_ambiente_C": 25.0,
+      "h_in_W_m2K": 500.0,
+      "h_out_W_m2K": 10.0,
+      "espesor_PUR_in": 2.0,
+      "densidad_PUR_kg_m3": 35.0,
+      "largo_calculo_m": 1.0,
+      "mostrar_temp_F": false,
+      "kPUR_a_W_mK": 0.022,
+      "kPUR_b_W_mK_perC": 0.00015,
+      "capas_extra": [
+        {
+          "nombre": "Barrera_vapor",
+          "espesor_in": 0.04,
+          "k_W_mK": 0.2
+        }
+      ]
+    },
+    {
+      "nombre": "Columna_36in_PUR3in",
+      "diametro_interno_in": 36.0,
+      "espesor_pared_in": 0.5,
+      "k_acero_W_mK": 16.0,
+      "T_fluido_C": -160.0,
+      "T_ambiente_C": 25.0,
+      "h_in_W_m2K": 600.0,
+      "h_out_W_m2K": 8.0,
+      "espesor_PUR_in": 3.0,
+      "densidad_PUR_kg_m3": 35.0,
+      "largo_calculo_m": 1.0,
+      "mostrar_temp_F": false,
+      "kPUR_a_W_mK": 0.022,
+      "kPUR_b_W_mK_perC": 0.00015,
+      "capas_extra": []
+    }
+  ]
+}
