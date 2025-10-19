@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>CryoFePe® – Aislamiento Caliente & Criogénico (iPhone)</title>
+<style>
+  :root { --pad: 14px; --radius: 12px; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin:0; color:#111; background:#fff; }
+  header { padding: var(--pad); text-align:center; border-bottom:1px solid #eee; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  .muted { color:#666; font-size: 0.85rem; }
+  .wrap { padding: var(--pad); }
+  .tabs { display:flex; gap:10px; margin-bottom:10px; }
+  .tab { flex:1; text-align:center; padding:10px; border:1px solid #ddd; border-radius:10px; cursor:pointer; }
+  .tab.active { background:#111; color:#fff; border-color:#111; }
+  .card { border:1px solid #eee; border-radius: var(--radius); padding: var(--pad); margin-bottom: var(--pad); }
+  label { display:block; font-size: 0.86rem; margin: 10px 0 6px; }
+  input { width:100%; font-size:1rem; padding:10px; border:1px solid #ddd; border-radius:9px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button { width:100%; padding:12px; font-size:1rem; border:0; border-radius:10px; background:#111; color:#fff; }
+  button.secondary { background:#444; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border:1px solid #eee; padding:8px; text-align:left; font-size:0.92rem; }
+  th { background:#f7f7f7; }
+  canvas { width:100%; height:220px; border:1px solid #eee; border-radius:8px; background:#fff; }
+  .actions { display:flex; gap:10px; margin-top:12px; }
+  .signature { text-align:right; margin-top:10px; font-size:0.95rem; }
+  .print-note { margin-top:8px; font-size:0.85rem; color:#333; }
+  footer { text-align:center; padding:18px; color:#888; font-size:0.85rem; }
+  @media print { header, .tabs, .actions, .print-note { display:none; } body { padding: 10mm; } .card { border:0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>CryoFePe® – Aislamiento Caliente & Criogénico</h1>
+  <div class="muted">Proyecto: Heat Loss from Multilayered Insulated Surfaces</div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div id="tab-hot" class="tab active">Caliente</div>
+    <div id="tab-cold" class="tab">Frío / Criogénico</div>
+  </div>
+
+  <div id="hot" class="card">
+    <h2 style="margin-top:0;">Datos de entrada – Caliente</h2>
+    <div class="row">
+      <div><label>Diámetro exterior (in)</label><input id="h_d_in" type="number" inputmode="decimal" value="10"></div>
+      <div><label>T° proceso (°C)</label><input id="h_t_proc" type="number" inputmode="decimal" value="250"></div>
+    </div>
+    <div class="row">
+      <div><label>T° ambiente (°C)</label><input id="h_t_amb" type="number" inputmode="decimal" value="30"></div>
+      <div><label>h externa convectiva (W/m²·K)</label><input id="h_h_ext" type="number" inputmode="decimal" value="10"></div>
+    </div>
+    <div class="row">
+      <div><label>Emisividad chaqueta ε (–)</label><input id="h_eps" type="number" inputmode="decimal" value="0.90" step="0.01" min="0" max="1"></div>
+      <div><label>k aislamiento (W/m·K)</label><input id="h_k" type="number" inputmode="decimal" value="0.045" step="0.001"></div>
+    </div>
+    <div class="row">
+      <div><label>Límite T° superficial (°C)</label><input id="h_Ts_max" type="number" inputmode="decimal" value="60"></div>
+      <div><label>Longitud de cálculo (m)</label><input id="h_len" type="number" inputmode="decimal" value="1.0" step="0.1"></div>
+    </div>
+    <div class="actions"><button id="h_calc">Calcular</button><button id="h_reset" class="secondary">Limpiar</button></div>
+    <div class="print-note">Para exportar PDF: Compartir → Imprimir → zoom → Guardar en Archivos.</div>
+    <div id="h_results" style="display:none; margin-top:12px;">
+      <h2>Resultados – Caliente</h2>
+      <table><tbody id="h_tbl"></tbody></table>
+      <h2 style="margin-top:12px;">Perfil radial de temperatura</h2>
+      <canvas id="h_canvas" width="360" height="220"></canvas>
+      <div class="actions"><button onclick="window.print()">Imprimir / PDF</button><button id="h_csv" class="secondary">Exportar CSV</button></div>
+      <div class="signature">Firma: <b>Fernando Peluffo, P.E.</b></div>
+    </div>
+  </div>
+
+  <div id="cold" class="card" style="display:none;">
+    <h2 style="margin-top:0;">Datos de entrada – Frío / Criogénico</h2>
+    <div class="row">
+      <div><label>Diámetro exterior (in)</label><input id="c_d_in" type="number" inputmode="decimal" value="80"></div>
+      <div><label>T° proceso (°C)</label><input id="c_t_proc" type="number" inputmode="decimal" value="-160"></div>
+    </div>
+    <div class="row">
+      <div><label>T° ambiente (°C)</label><input id="c_t_amb" type="number" inputmode="decimal" value="35"></div>
+      <div><label>Humedad relativa (0–1)</label><input id="c_rh" type="number" inputmode="decimal" value="0.60" step="0.01" min="0" max="1"></div>
+    </div>
+    <div class="row">
+      <div><label>Altitud (m)</label><input id="c_elev" type="number" inputmode="decimal" value="500"></div>
+      <div><label>h externa (W/m²·K)</label><input id="c_h_ext" type="number" inputmode="decimal" value="8.0" step="0.5"></div>
+    </div>
+    <div class="row">
+      <div><label>Emisividad chaqueta ε (–)</label><input id="c_eps" type="number" inputmode="decimal" value="0.05" step="0.01" min="0" max="1"></div>
+      <div><label>k PUR (W/m·K)</label><input id="c_k" type="number" inputmode="decimal" value="0.024" step="0.001"></div>
+    </div>
+    <div class="row">
+      <div><label>Margen sobre punto de rocío (°C)</label><input id="c_safety" type="number" inputmode="decimal" value="3.0" step="0.5"></div>
+      <div><label>Longitud de cálculo (m)</label><input id="c_len" type="number" inputmode="decimal" value="1.0" step="0.1"></div>
+    </div>
+    <div class="actions"><button id="c_calc">Calcular</button><button id="c_reset" class="secondary">Limpiar</button></div>
+    <div class="print-note">Para exportar PDF: Compartir → Imprimir → zoom → Guardar en Archivos.</div>
+    <div id="c_results" style="display:none; margin-top:12px;">
+      <h2>Resultados – Frío / Criogénico</h2>
+      <table><tbody id="c_tbl"></tbody></table>
+      <h2 style="margin-top:12px;">Perfil radial de temperatura</h2>
+      <canvas id="c_canvas" width="360" height="220"></canvas>
+      <div class="actions"><button onclick="window.print()">Imprimir / PDF</button><button id="c_csv" class="secondary">Exportar CSV</button></div>
+      <div class="signature">Firma: <b>Fernando Peluffo, P.E.</b></div>
+    </div>
+  </div>
+</div>
+
+<footer>CryoFePe® – Aislamiento Caliente & Criogénico</footer>
+
+<script>
+const SIGMA = 5.670374419e-8;
+function dewPointC(tAmbC, rh){ const a=17.62,b=243.12; const g=(a*tAmbC)/(b+tAmbC)+Math.log(Math.max(1e-6,rh)); return (b*g)/(a-g); }
+function drawProfile(canvas, x_mm, T){ const ctx=canvas.getContext("2d"); const w=canvas.width,h=canvas.height; ctx.clearRect(0,0,w,h); const px=40,py=20; const plotW=w-px-10, plotH=h-py-28; const xmin=Math.min(...x_mm),xmax=Math.max(...x_mm); const ymin=Math.min(...T),ymax=Math.max(...T); const X=x=>px+((x-xmin)/(xmax-xmin||1))*plotW; const Y=y=>py+plotH-((y-ymin)/(ymax-ymin||1))*plotH; ctx.strokeStyle="#bbb"; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,py+plotH); ctx.lineTo(px+plotW,py+plotH); ctx.stroke(); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.beginPath(); for(let i=0;i<x_mm.length;i++){ const x=X(x_mm[i]), y=Y(T[i]); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); ctx.fillStyle="#333"; ctx.font="12px -apple-system,Arial"; ctx.fillText("Espesor desde OD metal (mm)", px+plotW/2-80, h-6); ctx.save(); ctx.translate(12, py+plotH/2+20); ctx.rotate(-Math.PI/2); ctx.fillText("Temperatura (°C)", 0, 0); ctx.restore(); }
+function h_total(Ts,Ta,hc,eps){ const TsK=Ts+273.15, TaK=Ta+273.15; const hrad=eps*SIGMA*(TsK*TsK+TaK*TaK)*(TsK+TaK); return hc+hrad; }
+function solveHot(d_in,Tp,Ta,hc,eps,k,L,Ts_max){ const ri=(d_in*0.0254)/2.0; function Ts_at(ro){ const R=Math.log(ro/ri)/(2*Math.PI*L*k); let Ts=(Tp+Ta)/2,q=0; for(let i=0;i<60;i++){ const ht=h_total(Ts,Ta,hc,eps); Ts=(Tp/R+ht*Ta)/(ht+1.0/R); q=(Tp-Ts)/R; } return {Ts,q,R}; } let lo=ri+0.002, hi=ri+0.50; for(let n=0;n<80;n++){ const mid=0.5*(lo+hi); const {Ts}=Ts_at(mid); if(Ts<=Ts_max) hi=mid; else lo=mid; } const ro=hi; const s=Ts_at(ro); const N=160, xr=[], Tr=[]; for(let i=0;i<N;i++){ const r=ri+(ro-ri)*i/(N-1); const T=Tp - s.q*Math.log(r/ri)/(2*Math.PI*L*k); xr.push((r-ri)*1000.0); Tr.push(T); } return {ro,ri,Ts:s.Ts,q:s.q,xr_mm:xr,Tr:Tr}; }
+function computeCold(d_in,Tf,Ta,rh,hc,eps,k,L,safety){ const ri=(d_in*0.0254)/2.0; const tDew=dewPointC(Ta,rh), tTarget=tDew+safety; function Ts_at(ro){ const R=Math.log(ro/ri)/(2*Math.PI*L*k); const Ts=(Tf/R+hc*Ta)/(hc+1.0/R); const q=(Tf-Ts)/R; return {Ts,q,R}; } let lo=ri+0.005, hi=ri+0.50; for(let n=0;n<80;n++){ const mid=0.5*(lo+hi); const {Ts}=Ts_at(mid); if(Ts>=tTarget) hi=mid; else lo=mid; } const ro=hi; const s=Ts_at(ro); const rb= ri*Math.exp((Tf - tTarget)*(2*Math.PI*L*k)/s.q); const N=160, xr=[], Tr=[]; for(let i=0;i<N;i++){ const r=ri+(ro-ri)*i/(N-1); const T=Tf - s.q*Math.log(r/ri)/(2*Math.PI*L*k); xr.push((r-ri)*1000.0); Tr.push(T);} return {ro,ri,Ts:s.Ts,q:s.q,xr_mm:xr,Tr:Tr,tDew,rb}; }
+function mm(x){ return (x*1000).toFixed(1); } function inch(x){ return (x*39.3700787).toFixed(2); }
+// Tabs
+const tabHot=document.getElementById('tab-hot'), tabCold=document.getElementById('tab-cold'), hotDiv=document.getElementById('hot'), coldDiv=document.getElementById('cold');
+tabHot.onclick=()=>{tabHot.classList.add('active'); tabCold.classList.remove('active'); hotDiv.style.display='block'; coldDiv.style.display='none';};
+tabCold.onclick=()=>{tabCold.classList.add('active'); tabHot.classList.remove('active'); hotDiv.style.display='none'; coldDiv.style.display='block';};
+// Hot
+document.getElementById('h_calc').onclick=()=>{
+  const d=parseFloat(h_d_in.value), Tp=parseFloat(h_t_proc.value), Ta=parseFloat(h_t_amb.value), hc=parseFloat(h_h_ext.value), eps=parseFloat(h_eps.value), k=parseFloat(h_k.value), L=parseFloat(h_len.value), Ts_max=parseFloat(h_Ts_max.value);
+  const r=solveHot(d,Tp,Ta,hc,eps,k,L,Ts_max);
+  const tbody=document.getElementById('h_tbl'); tbody.innerHTML="";
+  [["Espesor total", `${mm(r.ro-r.ri)} mm (${inch(r.ro-r.ri)} in)`],
+   ["Temp. superficial", `${r.Ts.toFixed(2)} °C (límite ${Ts_max} °C)`],
+   ["Pérdida de calor", `${r.q.toFixed(1)} W/m`]].forEach(x=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${x[0]}</td><td>${x[1]}</td>`; tbody.appendChild(tr);});
+  drawProfile(document.getElementById('h_canvas'), r.xr_mm, r.Tr, "Espesor desde OD metal (mm)");
+  document.getElementById('h_results').style.display="block";
+  document.getElementById('h_csv').onclick=()=>{
+    const csv=["Campo,Valor,Unidades",`Espesor total,${(r.ro-r.ri).toFixed(6)},m`,`Temp superficial,${r.Ts.toFixed(3)},C`,`Perdida de calor,${r.q.toFixed(3)},W/m`].join("
+");
+    const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="reporte_aislamiento_caliente.csv"; a.click(); URL.revokeObjectURL(a.href);
+  };
+};
+document.getElementById('h_reset').onclick=()=>{ document.getElementById('h_results').style.display="none"; };
+// Cold
+document.getElementById('c_calc').onclick=()=>{
+  const d=parseFloat(c_d_in.value), Tf=parseFloat(c_t_proc.value), Ta=parseFloat(c_t_amb.value), rh=parseFloat(c_rh.value), hc=parseFloat(c_h_ext.value), eps=parseFloat(c_eps.value), k=parseFloat(c_k.value), L=parseFloat(c_len.value), safety=parseFloat(c_safety.value);
+  const r=computeCold(d,Tf,Ta,rh,hc,eps,k,L,safety);
+  const tbody=document.getElementById('c_tbl'); tbody.innerHTML="";
+  [["Espesor total", `${mm(r.ro-r.ri)} mm (${inch(r.ro-r.ri)} in)`],
+   ["Temp. superficial", `${r.Ts.toFixed(2)} °C`],
+   ["Punto de rocío (ambiente)", `${r.tDew.toFixed(2)} °C`],
+   ["Flujo de calor", `${r.q.toFixed(1)} W/m`],
+   ["Barrera de vapor (desde OD metal)", `${mm(r.rb - r.ri)} mm`]].forEach(x=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${x[0]}</td><td>${x[1]}</td>`; tbody.appendChild(tr);});
+  drawProfile(document.getElementById('c_canvas'), r.xr_mm, r.Tr, "Espesor desde OD metal (mm)");
+  document.getElementById('c_results').style.display="block";
+  document.getElementById('c_csv').onclick=()=>{
+    const csv=["Campo,Valor,Unidades",`Espesor total,${(r.ro-r.ri).toFixed(6)},m`,`Temp superficial,${r.Ts.toFixed(3)},C`,`Flujo calor por metro,${r.q.toFixed(3)},W/m`,`Punto de rocio,${r.tDew.toFixed(3)},C`,`Barrera desde OD metal,${(r.rb - r.ri).toFixed(6)},m`].join("
+");
+    const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="reporte_aislamiento_criogenico.csv"; a.click(); URL.revokeObjectURL(a.href);
+  };
+};
+document.getElementById('c_reset').onclick=()=>{ document.getElementById('c_results').style.display="none"; };
+</script>
+</body>
+</html>
